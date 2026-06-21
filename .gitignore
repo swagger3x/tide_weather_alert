@@ -1,3 +1,6 @@
+# runtime state
+alert_state.json
+
 # virtual environment
 .venv/
 venv/
