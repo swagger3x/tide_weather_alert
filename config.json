@@ -7,10 +7,22 @@
   },
   "locations": [
     {
-      "name": "Example Pier",
-      "lat": 32.7033,
-      "lon": -117.2350,
-      "noaa_station_id": "9410166"
+      "name": "Poquoson, VA",
+      "lat": 37.1083,
+      "lon": -76.3183,
+      "noaa_station_id": "8638051"
+    },
+    {
+      "name": "Oyster, VA",
+      "lat": 37.285,
+      "lon": -75.912,
+      "noaa_station_id": "8631591"
+    },
+    {
+      "name": "Swan Quarter, NC",
+      "lat": 35.41,
+      "lon": -76.34,
+      "noaa_station_id": "8653795"
     }
   ]
 }
