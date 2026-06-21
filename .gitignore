@@ -3,9 +3,6 @@
 venv/
 env/
 
-# runtime state
-alert_state.json
-
 # Python cache
 __pycache__/
 *.py[cod]
