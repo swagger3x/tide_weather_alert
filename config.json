@@ -1,0 +1,16 @@
+{
+  "ntfy_topic": "denver-surf-check-4471",
+  "match_window_hours": 1,
+  "thresholds": {
+    "max_wind_mph": 12,
+    "max_cloud_pct": 20
+  },
+  "locations": [
+    {
+      "name": "Example Pier",
+      "lat": 32.7033,
+      "lon": -117.2350,
+      "noaa_station_id": "9410166"
+    }
+  ]
+}

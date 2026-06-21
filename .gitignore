@@ -1,0 +1,19 @@
+# virtual environment
+.venv/
+venv/
+env/
+
+# runtime state
+alert_state.json
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
