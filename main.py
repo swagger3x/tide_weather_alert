@@ -151,7 +151,8 @@ def run_check(config, debug=False):
         for match in matches:
             key = make_match_key(name, match)
             if key in alerted_keys:
-                continue  # already alerted for this exact hour
+                print(f"  Conditions met for {name} at {match['time']}, but already alerted earlier — skipping duplicate.")
+                continue
 
             message = format_message(name, match)
             try:
