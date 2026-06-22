@@ -1,7 +1,7 @@
 """
 Tracks which matches have already triggered an alert, so re-running
 the script (e.g. via cron) doesn't spam duplicate notifications for
-the same forecast hour.
+the same qualifying day.
 """
 
 import json
@@ -27,7 +27,7 @@ def save_alerted_keys(keys):
 
 def make_match_key(location_name, match):
     """
-    Unique key per location + forecast hour, so the same
-    hour isn't alerted twice even across multiple script runs.
+    Unique key per location + qualifying day, so the same
+    day isn't alerted twice even across multiple script runs.
     """
-    return f"{location_name}|{match['time'].isoformat()}"
+    return f"{location_name}|{match['date'].isoformat()}"

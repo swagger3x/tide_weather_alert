@@ -1,4 +1,5 @@
 """
+tides.py
 Fetches high tide predictions from NOAA CO-OPS (US coastal stations only).
 No API key required. Find station IDs at:
 https://tidesandcurrents.noaa.gov/tide_predictions.html
@@ -10,10 +11,13 @@ from datetime import datetime, timedelta
 NOAA_URL = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter"
 
 
-def get_high_tides(station_id, days=2):
+def get_high_tides(station_id, days=6):
     """
     Returns a list of datetimes representing high tide events
     over the next `days` days for the given NOAA station.
+
+    days=6 matches weather.py to cover the next 5 weekdays regardless
+    of what day of the week the script runs.
     """
     begin = datetime.now()
     end = begin + timedelta(days=days)

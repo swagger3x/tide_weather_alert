@@ -10,19 +10,22 @@
       "name": "Poquoson, VA",
       "lat": 37.1083,
       "lon": -76.3183,
-      "noaa_station_id": "8638051"
+      "noaa_station_id": "8638051",
+      "check_tide": true
     },
     {
       "name": "Oyster, VA",
       "lat": 37.285,
       "lon": -75.912,
-      "noaa_station_id": "8631591"
+      "noaa_station_id": "8631591",
+      "check_tide": true
     },
     {
       "name": "Swan Quarter, NC",
       "lat": 35.41,
       "lon": -76.34,
-      "noaa_station_id": "8653795"
+      "noaa_station_id": "8653795",
+      "check_tide": false
     }
   ]
 }
