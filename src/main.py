@@ -9,17 +9,17 @@ Run manually:
 Run a test notification (sends immediately, skips the real check):
     python main.py --test
 
-Intended to be scheduled via cron once per day (see README.md).
+Intended to be scheduled via AWS EventBridge (Lambda) or cron once per day.
 """
 
 import json
 import sys
 import os
 
-from weather import get_wind_cloud_forecast
-from tides import get_high_tides
-from matcher import find_matches
-from notifier import send_alert
+from src.weather import get_wind_cloud_forecast
+from src.tides import get_high_tides
+from src.matcher import find_matches
+from src.notifier import send_alert
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.json")
 
@@ -98,6 +98,16 @@ def run_check(config):
                       f"{match['block_end'].strftime('%I%p')})")
             except Exception as e:
                 print(f"  ERROR sending alert for {name}: {e}")
+
+
+def lambda_handler(event, context):
+    """
+    AWS Lambda entry point.
+    Called automatically by EventBridge on the configured schedule.
+    """
+    config = load_config()
+    run_check(config)
+    return {"statusCode": 200, "body": "Check complete"}
 
 
 if __name__ == "__main__":
