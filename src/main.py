@@ -155,26 +155,26 @@ def update_recipient_email(config, new_email, token):
     Only proceeds if the provided token matches api_secret in config.
     """
     expected_token = config.get("api_secret", "")
- 
+
     if not expected_token:
         return {"statusCode": 500, "body": "api_secret not configured"}
- 
+
     if token != expected_token:
         return {"statusCode": 401, "body": "Invalid token"}
- 
+
     if not new_email or "@" not in new_email:
         return {"statusCode": 400, "body": "Invalid email address"}
- 
+
     # Update config file in place
     with open(CONFIG_FILE, "r") as f:
         raw = json.load(f)
- 
+
     old_email = raw.get("recipient_email", "")
     raw["recipient_email"] = new_email
- 
+
     with open(CONFIG_FILE, "w") as f:
         json.dump(raw, f, indent=2)
- 
+
     print(f"Email updated: {old_email} -> {new_email}")
     return {
         "statusCode": 200,
@@ -184,8 +184,24 @@ def update_recipient_email(config, new_email, token):
             "new_email": new_email,
         })
     }
- 
- 
+
+
+CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+}
+
+
+def cors_response(status_code, body):
+    """Wraps a response with CORS headers."""
+    return {
+        "statusCode": status_code,
+        "headers": CORS_HEADERS,
+        "body": body if isinstance(body, str) else __import__('json').dumps(body),
+    }
+
+
 def lambda_handler(event, context):
     """
     AWS Lambda entry point.
@@ -194,23 +210,31 @@ def lambda_handler(event, context):
     - HTTP request via Function URL -> update recipient email
     """
     config = load_config()
- 
+
     # HTTP request via Function URL
     if event.get("requestContext", {}).get("http"):
+        method = event.get("requestContext", {}).get("http", {}).get("method", "")
+
+        # Handle CORS preflight
+        if method == "OPTIONS":
+            return cors_response(200, "OK")
+
         try:
             body = json.loads(event.get("body") or "{}")
         except json.JSONDecodeError:
-            return {"statusCode": 400, "body": "Invalid JSON body"}
- 
+            return cors_response(400, "Invalid JSON body")
+
         action = body.get("action")
         token = body.get("token", "")
         new_email = body.get("email", "")
- 
+
         if action == "update_email":
-            return update_recipient_email(config, new_email, token)
- 
-        return {"statusCode": 400, "body": "Unknown action"}
- 
+            result = update_recipient_email(config, new_email, token)
+            result["headers"] = CORS_HEADERS
+            return result
+
+        return cors_response(400, "Unknown action")
+
     # EventBridge scheduled trigger -> run weather check
     run_check(config)
     return {"statusCode": 200, "body": "Check complete"}
