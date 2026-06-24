@@ -21,6 +21,7 @@ from tides import get_high_tides
 from matcher import get_next_5_weekdays
 from reasons import get_day_reason
 from notifier import send_alert
+from email_sender import send_email
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.json")
 
@@ -56,13 +57,19 @@ def build_ntfy_message(all_results, weekdays):
                 _, block_start, block_end = result
                 start_t = block_start.strftime("%I%p").lstrip("0")
                 end_t = block_end.strftime("%I%p").lstrip("0")
-                lines.append(f"\U0001F7E2 {label} \u2014 {start_t} - {end_t}")
+                lines.append(f"\U0001F7E2 {label} \u2014 Conditions Met {start_t} - {end_t}")
             else:
                 _, reason = result
                 if reason == "No Data":
                     lines.append(f"\u2b1c {label} \u2014 No Forecast Yet")
                 else:
-                    lines.append(f"\u274c {label} \u2014 {reason}")
+                    reason_icons = {
+                        "Too Windy":     "\U0001f4a8 Too Windy",
+                        "Too Cloudy":    "\u2601\ufe0f Too Cloudy",
+                        "Windy, Cloudy": "\U0001f4a8\u2601\ufe0f Windy, Cloudy",
+                    }
+                    display_reason = reason_icons.get(reason, reason)
+                    lines.append(f"\u274c {label} \u2014 {display_reason}")
         lines.append("")
 
     return "\n".join(lines).strip()
@@ -125,9 +132,21 @@ def run_check(config):
     message = build_ntfy_message(all_results, weekdays)
     try:
         send_alert(topic, title="Tide & Weather — Weekly Forecast", message=message)
-        print("\nCombined notification sent.")
+        print("\nntfy notification sent.")
     except Exception as e:
-        print(f"\nERROR sending notification: {e}")
+        print(f"\nERROR sending ntfy notification: {e}")
+
+    # Send HTML email via Resend
+    api_key = config.get("resend_api_key")
+    recipient = config.get("recipient_email")
+    if api_key and recipient:
+        try:
+            send_email(api_key, recipient, all_results, weekdays)
+            print(f"Email sent to {recipient}.")
+        except Exception as e:
+            print(f"ERROR sending email: {e}")
+    else:
+        print("Email skipped — resend_api_key or recipient_email not set in config.")
 
 
 def lambda_handler(event, context):
