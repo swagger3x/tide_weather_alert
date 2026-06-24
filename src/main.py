@@ -149,12 +149,69 @@ def run_check(config):
         print("Email skipped — resend_api_key or recipient_email not set in config.")
 
 
+def update_recipient_email(config, new_email, token):
+    """
+    Updates recipient_email in config.json on Lambda.
+    Only proceeds if the provided token matches api_secret in config.
+    """
+    expected_token = config.get("api_secret", "")
+ 
+    if not expected_token:
+        return {"statusCode": 500, "body": "api_secret not configured"}
+ 
+    if token != expected_token:
+        return {"statusCode": 401, "body": "Invalid token"}
+ 
+    if not new_email or "@" not in new_email:
+        return {"statusCode": 400, "body": "Invalid email address"}
+ 
+    # Update config file in place
+    with open(CONFIG_FILE, "r") as f:
+        raw = json.load(f)
+ 
+    old_email = raw.get("recipient_email", "")
+    raw["recipient_email"] = new_email
+ 
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(raw, f, indent=2)
+ 
+    print(f"Email updated: {old_email} -> {new_email}")
+    return {
+        "statusCode": 200,
+        "body": json.dumps({
+            "message": "Email updated successfully",
+            "old_email": old_email,
+            "new_email": new_email,
+        })
+    }
+ 
+ 
 def lambda_handler(event, context):
     """
     AWS Lambda entry point.
-    Called automatically by EventBridge on the configured schedule.
+    Handles two cases:
+    - EventBridge scheduled trigger -> run the weather check
+    - HTTP request via Function URL -> update recipient email
     """
     config = load_config()
+ 
+    # HTTP request via Function URL
+    if event.get("requestContext", {}).get("http"):
+        try:
+            body = json.loads(event.get("body") or "{}")
+        except json.JSONDecodeError:
+            return {"statusCode": 400, "body": "Invalid JSON body"}
+ 
+        action = body.get("action")
+        token = body.get("token", "")
+        new_email = body.get("email", "")
+ 
+        if action == "update_email":
+            return update_recipient_email(config, new_email, token)
+ 
+        return {"statusCode": 400, "body": "Unknown action"}
+ 
+    # EventBridge scheduled trigger -> run weather check
     run_check(config)
     return {"statusCode": 200, "body": "Check complete"}
 

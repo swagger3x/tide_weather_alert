@@ -2,6 +2,7 @@
   "ntfy_topic": "denver-surf-check-4471",
   "resend_api_key": "re_QYBeNMrj_7H4ecdAxgAssAMZSKXLsHMpe",
   "recipient_email": "calvinjaysont@gmail.com",
+  "api_secret": "xK9q2mVtPfLnRjW8cBdYeHsAuGo3ZiNp",
   "match_window_hours": 1,
   "thresholds": {
     "max_wind_mph": 12,
