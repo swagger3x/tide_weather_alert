@@ -23,10 +23,15 @@ from reasons import get_day_reason
 from notifier import send_alert
 from email_sender import send_email
 
-CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.json")
+CONFIG_FILE_SRC = os.path.join(os.path.dirname(__file__), "config.json")
+CONFIG_FILE = "/tmp/config.json"
 
 
 def load_config():
+    # Lambda /var/task is read-only — copy config to writable /tmp on first run
+    if not os.path.exists(CONFIG_FILE):
+        import shutil
+        shutil.copy2(CONFIG_FILE_SRC, CONFIG_FILE)
     with open(CONFIG_FILE, "r") as f:
         return json.load(f)
 
@@ -149,91 +154,91 @@ def run_check(config):
         print("Email skipped — resend_api_key or recipient_email not set in config.")
 
 
-def update_recipient_email(config, new_email, token):
-    """
-    Updates recipient_email in config.json on Lambda.
-    Only proceeds if the provided token matches api_secret in config.
-    """
-    expected_token = config.get("api_secret", "")
+# ----------------------------------------------------------------
+# EMAIL UPDATE ENDPOINT — currently disabled
+# Requires further discussion on persistent storage approach
+# since Lambda /var/task is read-only and /tmp resets on cold start.
+# To re-enable: uncomment the functions below and restore
+# the HTTP request handler block in lambda_handler.
+# ----------------------------------------------------------------
 
-    if not expected_token:
-        return {"statusCode": 500, "body": "api_secret not configured"}
-
-    if token != expected_token:
-        return {"statusCode": 401, "body": "Invalid token"}
-
-    if not new_email or "@" not in new_email:
-        return {"statusCode": 400, "body": "Invalid email address"}
-
-    # Update config file in place
-    with open(CONFIG_FILE, "r") as f:
-        raw = json.load(f)
-
-    old_email = raw.get("recipient_email", "")
-    raw["recipient_email"] = new_email
-
-    with open(CONFIG_FILE, "w") as f:
-        json.dump(raw, f, indent=2)
-
-    print(f"Email updated: {old_email} -> {new_email}")
-    return {
-        "statusCode": 200,
-        "body": json.dumps({
-            "message": "Email updated successfully",
-            "old_email": old_email,
-            "new_email": new_email,
-        })
-    }
-
-
-CORS_HEADERS = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-}
-
-
-def cors_response(status_code, body):
-    """Wraps a response with CORS headers."""
-    return {
-        "statusCode": status_code,
-        "headers": CORS_HEADERS,
-        "body": body if isinstance(body, str) else __import__('json').dumps(body),
-    }
+# def update_recipient_email(config, new_email, token):
+#     """
+#     Updates recipient_email in config.json on Lambda.
+#     Only proceeds if the provided token matches api_secret in config.
+#     """
+#     expected_token = config.get("api_secret", "")
+#
+#     if not expected_token:
+#         return {"statusCode": 500, "body": "api_secret not configured"}
+#
+#     if token != expected_token:
+#         return {"statusCode": 401, "body": "Invalid token"}
+#
+#     if not new_email or "@" not in new_email:
+#         return {"statusCode": 400, "body": "Invalid email address"}
+#
+#     # Update config file in place
+#     with open(CONFIG_FILE, "r") as f:
+#         raw = json.load(f)
+#
+#     old_email = raw.get("recipient_email", "")
+#     raw["recipient_email"] = new_email
+#
+#     with open(CONFIG_FILE, "w") as f:
+#         json.dump(raw, f, indent=2)
+#
+#     print(f"Email updated: {old_email} -> {new_email}")
+#     return {
+#         "statusCode": 200,
+#         "body": json.dumps({
+#             "message": "Email updated successfully",
+#             "old_email": old_email,
+#             "new_email": new_email,
+#         })
+#     }
+#
+#
+# CORS_HEADERS = {
+#     "Access-Control-Allow-Origin": "*",
+#     "Access-Control-Allow-Methods": "POST",
+# }
+#
+#
+# def cors_response(status_code, body):
+#     """Wraps a response with CORS headers."""
+#     return {
+#         "statusCode": status_code,
+#         "headers": CORS_HEADERS,
+#         "body": body if isinstance(body, str) else __import__('json').dumps(body),
+#     }
 
 
 def lambda_handler(event, context):
     """
     AWS Lambda entry point.
-    Handles two cases:
-    - EventBridge scheduled trigger -> run the weather check
-    - HTTP request via Function URL -> update recipient email
+    Called automatically by EventBridge on the configured schedule.
+    Email update endpoint is currently disabled — see comments above.
     """
     config = load_config()
 
-    # HTTP request via Function URL
-    if event.get("requestContext", {}).get("http"):
-        method = event.get("requestContext", {}).get("http", {}).get("method", "")
-
-        # Handle CORS preflight
-        if method == "OPTIONS":
-            return cors_response(200, "OK")
-
-        try:
-            body = json.loads(event.get("body") or "{}")
-        except json.JSONDecodeError:
-            return cors_response(400, "Invalid JSON body")
-
-        action = body.get("action")
-        token = body.get("token", "")
-        new_email = body.get("email", "")
-
-        if action == "update_email":
-            result = update_recipient_email(config, new_email, token)
-            result["headers"] = CORS_HEADERS
-            return result
-
-        return cors_response(400, "Unknown action")
+    # HTTP request handler (disabled — uncomment when email update is re-enabled)
+    # if event.get("requestContext", {}).get("http"):
+    #     method = event.get("requestContext", {}).get("http", {}).get("method", "")
+    #     if method == "OPTIONS":
+    #         return cors_response(200, "OK")
+    #     try:
+    #         body = json.loads(event.get("body") or "{}")
+    #     except json.JSONDecodeError:
+    #         return cors_response(400, "Invalid JSON body")
+    #     action = body.get("action")
+    #     token = body.get("token", "")
+    #     new_email = body.get("email", "")
+    #     if action == "update_email":
+    #         result = update_recipient_email(config, new_email, token)
+    #         result["headers"] = CORS_HEADERS
+    #         return result
+    #     return cors_response(400, "Unknown action")
 
     # EventBridge scheduled trigger -> run weather check
     run_check(config)
