@@ -6,15 +6,19 @@ high tide all satisfy the configured thresholds.
 """
 
 from datetime import datetime, timedelta, date
+from zoneinfo import ZoneInfo
+
+EASTERN = ZoneInfo("America/New_York")
 
 
 def get_next_5_weekdays(from_date=None):
     """
     Returns the next 5 weekdays (Mon-Fri) starting from tomorrow
-    relative to from_date. Defaults to today if not provided.
+    relative to from_date. Always uses Eastern Time when from_date
+    is not provided — ensures correct date on Lambda (which runs in UTC).
     """
     if from_date is None:
-        from_date = datetime.now().date()
+        from_date = datetime.now(EASTERN).date()
 
     days = []
     current = from_date + timedelta(days=1)
@@ -86,7 +90,8 @@ def find_matches(forecast, high_tides, thresholds, location, from_date=None):
     blocks between 8am-8pm. Tide check is skipped if location has
     check_tide=False.
 
-    from_date: override today's date (used for testing). Defaults to today.
+    from_date: override today's date (used for testing). Defaults to
+               Eastern Time today.
 
     Returns a list of match dicts, one per qualifying day:
     [
@@ -121,10 +126,10 @@ def find_matches(forecast, high_tides, thresholds, location, from_date=None):
             if check_tide:
                 tide = block_has_tide(block, high_tides)
                 if tide is None:
-                    continue  # tide required but not found in this block
+                    continue
                 matched_tide = tide
             matched_block = block
-            break  # take the first qualifying block of the day
+            break
 
         if matched_block is None:
             continue
