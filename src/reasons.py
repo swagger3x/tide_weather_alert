@@ -82,11 +82,11 @@ def get_day_reason(forecast, high_tides, thresholds, location, target_date):
     # Combined block exists — check tide if required
     if not check_tide:
         block = combined_blocks[0]
-        return ("match", block[0]["time"], block[-1]["time"])
+        return ("match", block[0]["time"], block[-1]["time"], None)
 
     for block in combined_blocks:
         tide = block_has_tide(block, high_tides)
         if tide:
-            return ("match", block[0]["time"], block[-1]["time"])
+            return ("match", block[0]["time"], block[-1]["time"], tide)
 
     return ("no_match", "No High Tide")

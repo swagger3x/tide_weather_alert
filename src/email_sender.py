@@ -46,15 +46,21 @@ def build_html_table(all_results, weekdays):
                 bg = COLOR_NO_DATA
                 cell_content = "<span style=\"color:#999; font-size:12px;\">No Forecast</span>"
             elif result[0] == "match":
-                r_type, blk_start, blk_end = result
+                r_type, blk_start, blk_end, tide_time = result
                 start_t = blk_start.strftime("%I%p").lstrip("0")
                 end_t = blk_end.strftime("%I%p").lstrip("0")
                 bg = COLOR_MATCH
+                tide_str = (
+                    f"<br><span style=\"font-size:10px; color:#155724;\">"
+                    f"🌊 High tide at: {tide_time.strftime('%I:%M %p')}</span>"
+                    if tide_time else ""
+                )
                 cell_content = (
                     "<span style=\"font-size:22px;\">✅</span><br>"
                     f"<span style=\"font-size:12px; font-weight:700; color:#155724;\">"
                     f"{start_t} – {end_t}</span><br>"
                     "<span style=\"font-size:10px; color:#155724;\">Conditions Met</span>"
+                    f"{tide_str}"
                 )
             else:
                 r_type, reason = result

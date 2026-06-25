@@ -18,18 +18,18 @@ import os
 
 from weather import get_wind_cloud_forecast
 from tides import get_high_tides
-from matcher import get_next_5_weekdays
+from matcher import get_next_5_days
 from reasons import get_day_reason
 from notifier import send_alert
 from email_sender import send_email
 
 CONFIG_FILE_SRC = os.path.join(os.path.dirname(__file__), "config.json")
-CONFIG_FILE = "/tmp/config.json"
+_IN_LAMBDA = bool(os.environ.get("AWS_LAMBDA_FUNCTION_NAME"))
+CONFIG_FILE = "/tmp/config.json" if _IN_LAMBDA else CONFIG_FILE_SRC
 
 
 def load_config():
-    # Lambda /var/task is read-only — copy config to writable /tmp on first run
-    if not os.path.exists(CONFIG_FILE):
+    if _IN_LAMBDA and not os.path.exists(CONFIG_FILE):
         import shutil
         shutil.copy2(CONFIG_FILE_SRC, CONFIG_FILE)
     with open(CONFIG_FILE, "r") as f:
@@ -59,10 +59,11 @@ def build_ntfy_message(all_results, weekdays):
             if result is None:
                 lines.append(f"\u2b1c {label} \u2014 No Forecast Yet")
             elif result[0] == "match":
-                _, block_start, block_end = result
+                _, block_start, block_end, tide_time = result
                 start_t = block_start.strftime("%I%p").lstrip("0")
                 end_t = block_end.strftime("%I%p").lstrip("0")
-                lines.append(f"\U0001F7E2 {label} \u2014 Conditions Met {start_t} - {end_t}")
+                tide_str = f" | High tide at: {tide_time.strftime('%I:%M %p')}" if tide_time else ""
+                lines.append(f"🟢 {label} — Conditions Met {start_t} - {end_t}{tide_str}")
             else:
                 _, reason = result
                 if reason == "No Data":
@@ -107,7 +108,7 @@ def run_test(config):
 def run_check(config):
     thresholds = config["thresholds"]
     topic = config["ntfy_topic"]
-    weekdays = get_next_5_weekdays()
+    weekdays = get_next_5_days()
 
     all_results = {}
 

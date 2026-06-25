@@ -11,22 +11,19 @@ from zoneinfo import ZoneInfo
 EASTERN = ZoneInfo("America/New_York")
 
 
-def get_next_5_weekdays(from_date=None):
+def get_next_5_days(from_date=None):
     """
-    Returns the next 5 weekdays (Mon-Fri) starting from tomorrow
-    relative to from_date. Always uses Eastern Time when from_date
+    Returns the next 5 calendar days starting from tomorrow,
+    including weekends. Always uses Eastern Time when from_date
     is not provided — ensures correct date on Lambda (which runs in UTC).
+
+    Examples:
+        Today is Friday  -> [Sat, Sun, Mon, Tue, Wed]
+        Today is Monday  -> [Tue, Wed, Thu, Fri, Sat]
     """
     if from_date is None:
         from_date = datetime.now(EASTERN).date()
-
-    days = []
-    current = from_date + timedelta(days=1)
-    while len(days) < 5:
-        if current.weekday() < 5:  # 0=Mon, 4=Fri
-            days.append(current)
-        current += timedelta(days=1)
-    return days
+    return [from_date + timedelta(days=i) for i in range(1, 6)]
 
 
 def get_hours_in_window(forecast, target_date, start_hour=8, end_hour=20):
@@ -107,7 +104,7 @@ def find_matches(forecast, high_tides, thresholds, location, from_date=None):
     ]
     """
     check_tide = location.get("check_tide", True)
-    weekdays = get_next_5_weekdays(from_date)
+    weekdays = get_next_5_days(from_date)
     matches = []
 
     for day in weekdays:
