@@ -10,7 +10,7 @@ import urllib.error
 
 
 RESEND_API_URL = "https://api.resend.com/emails"
-SENDER = "Tide & Weather Alert <onboarding@resend.dev>"
+SENDER = "Tide & Weather Alert <alerts@createlogs.com>"
 
 
 def build_html_table(all_results, weekdays):
