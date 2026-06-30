@@ -13,17 +13,17 @@ EASTERN = ZoneInfo("America/New_York")
 
 def get_next_5_days(from_date=None):
     """
-    Returns the next 5 calendar days starting from tomorrow,
-    including weekends. Always uses Eastern Time when from_date
-    is not provided — ensures correct date on Lambda (which runs in UTC).
+    Returns today + the next 5 calendar days (6 days total), including weekends.
+    Always uses Eastern Time when from_date is not provided — ensures correct
+    date on Lambda (which runs in UTC).
 
     Examples:
-        Today is Friday  -> [Sat, Sun, Mon, Tue, Wed]
-        Today is Monday  -> [Tue, Wed, Thu, Fri, Sat]
+        Today is Friday  -> [Fri, Sat, Sun, Mon, Tue, Wed]
+        Today is Monday  -> [Mon, Tue, Wed, Thu, Fri, Sat]
     """
     if from_date is None:
         from_date = datetime.now(EASTERN).date()
-    return [from_date + timedelta(days=i) for i in range(1, 6)]
+    return [from_date + timedelta(days=i) for i in range(0, 6)]
 
 
 def get_hours_in_window(forecast, target_date, start_hour=8, end_hour=20):
